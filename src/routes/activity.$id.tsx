@@ -104,18 +104,18 @@ function ActivityDetail() {
           )}
           {entry.step === "step3_execution" && (
             <button
-              onClick={() => submitProof(c.id)}
-              className="w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground font-semibold shadow-card flex items-center justify-center gap-2"
+              onClick={() => advanceStep(c.id, "step4_completed")}
+              className="w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground font-semibold shadow-card"
             >
-              <Upload className="h-5 w-5" /> Upload proof & complete
+              Mark execution completed
             </button>
           )}
-          {entry.step === "step4_completed" && entry.rejectionReason && (
+          {entry.step === "step4_completed" && (
             <button
               onClick={() => submitProof(c.id)}
               className="w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground font-semibold shadow-card flex items-center justify-center gap-2"
             >
-              <Upload className="h-5 w-5" /> Resubmit proof
+              <Upload className="h-5 w-5" /> {entry.rejectionReason ? "Resubmit proof" : "Upload proof & complete"}
             </button>
           )}
           {entry.step === "step5_review" && (
@@ -136,14 +136,6 @@ function ActivityDetail() {
                 </button>
               </div>
             </div>
-          )}
-          {entry.step === "step1_registered" && (
-            <button
-              onClick={() => advanceStep(c.id, "step2_printing")}
-              className="w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground font-semibold shadow-card"
-            >
-              Advance to production
-            </button>
           )}
         </div>
       )}
@@ -178,10 +170,20 @@ function ActivityDetail() {
 }
 
 function StepAction({ step, campaignId }: { step: CampaignStep; campaignId: string }) {
+  if (step === "step1_registered") {
+    return <p className="text-xs text-muted-foreground mt-1">Waiting for production approval...</p>;
+  }
   if (step === "step3_execution") {
     return (
+      <p className="text-xs text-muted-foreground mt-1">
+        Please complete the required tasks at the location.
+      </p>
+    );
+  }
+  if (step === "step4_completed") {
+    return (
       <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-        <Camera className="h-3.5 w-3.5" /> Take photo proof at the store when done.
+        <Camera className="h-3.5 w-3.5" /> Take photo proof at the store.
       </p>
     );
   }

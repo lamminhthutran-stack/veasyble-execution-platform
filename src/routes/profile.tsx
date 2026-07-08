@@ -18,8 +18,12 @@ function Profile() {
     <AppShell title="My Profile">
       <div className="px-5 pt-4">
         <div className="flex items-center gap-4 py-2">
-          <div className="h-14 w-14 rounded-full bg-gradient-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
-            {profile.fullName.split(" ").map((p) => p[0]).join("").slice(0, 2)}
+          <div className="h-14 w-14 rounded-full bg-gradient-primary text-primary-foreground flex items-center justify-center font-bold text-lg overflow-hidden shrink-0">
+            {profile.avatar ? (
+              <img src={profile.avatar} alt={profile.fullName} className="w-full h-full object-cover" />
+            ) : (
+              profile.fullName.split(" ").map((p) => p[0]).join("").slice(0, 2)
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="font-semibold text-lg">{profile.fullName}</div>

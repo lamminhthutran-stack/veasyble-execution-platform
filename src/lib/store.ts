@@ -19,6 +19,7 @@ type Profile = {
   bank: string;
   address: string;
   language: string;
+  avatar?: string;
 };
 
 type State = {
@@ -70,6 +71,7 @@ export const useStore = create<State>()(
         bank: "VCB • •••• 4821",
         address: "42 Nguyen Hue, District 1, HCMC",
         language: "English",
+        avatar: "/profile_avatar_demo.png",
       },
       activity: INITIAL_ACTIVITY,
       history: INITIAL_HISTORY,
