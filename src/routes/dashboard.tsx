@@ -29,20 +29,20 @@ function Dashboard() {
 
   return (
     <AppShell>
-      <div className="bg-gradient-hero text-white px-5 pt-12 pb-8 rounded-b-[2rem]">
+      <div className="bg-gradient-hero text-foreground px-5 pt-12 pb-8 rounded-b-[2rem]">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-white/80 text-sm">Welcome back</div>
+            <div className="text-muted-foreground text-sm">Welcome back</div>
             <div className="text-2xl font-bold mt-0.5">{profile.fullName.split(" ")[0]}</div>
           </div>
-          <button className="h-10 w-10 rounded-full bg-white/15 flex items-center justify-center backdrop-blur">
+          <button className="h-10 w-10 rounded-full bg-black/5 flex items-center justify-center backdrop-blur">
             <Bell className="h-5 w-5" />
           </button>
         </div>
-        <div className="mt-6 bg-white/12 backdrop-blur rounded-2xl p-4 border border-white/15">
-          <div className="text-xs uppercase tracking-wider text-white/80 font-semibold">Projected monthly earnings</div>
-          <div className="mt-1 text-3xl font-bold font-display">{formatVND(projected)}</div>
-          <Link to="/earnings" className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-white/90">
+        <div className="mt-6 bg-white/50 backdrop-blur rounded-2xl p-4 border border-border/60 shadow-sm">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Projected monthly earnings</div>
+          <div className="mt-1 text-3xl font-bold font-display text-primary">{formatVND(projected)}</div>
+          <Link to="/earnings" className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary">
             <TrendingUp className="h-4 w-4" /> View earnings
           </Link>
         </div>

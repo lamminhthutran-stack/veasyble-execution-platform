@@ -28,14 +28,14 @@ function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex items-stretch">
       <div className="mx-auto w-full max-w-md min-h-screen flex flex-col px-6 pt-14 pb-8">
-        <div className="bg-gradient-hero rounded-3xl p-6 text-white shadow-elevated">
-          <div className="flex items-center gap-2 text-sm font-medium opacity-90">
-            <Sparkles className="h-4 w-4" /> Veasyble
+        <div className="bg-gradient-hero rounded-3xl p-6 text-foreground shadow-elevated">
+          <div className="flex items-center gap-2 text-sm font-medium text-black">
+            <Sparkles className="h-4 w-4 text-primary" /> Veasyble
           </div>
-          <h1 className="mt-8 text-3xl font-bold leading-tight">
+          <h1 className="mt-8 text-3xl font-bold leading-tight text-black">
             Set up campaigns.<br />Get paid on time.
           </h1>
-          <p className="mt-3 text-sm text-white/85">
+          <p className="mt-3 text-sm text-muted-foreground">
             The execution platform for retail campaign setup.
           </p>
         </div>

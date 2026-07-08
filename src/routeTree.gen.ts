@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProfileInfoRouteImport } from './routes/profile-info'
+import { Route as ProfileAccountRouteImport } from './routes/profile-account'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as LoginRouteImport } from './routes/login'
@@ -20,6 +22,16 @@ import { Route as ActivityIndexRouteImport } from './routes/activity.index'
 import { Route as CampaignIdRouteImport } from './routes/campaign.$id'
 import { Route as ActivityIdRouteImport } from './routes/activity.$id'
 
+const ProfileInfoRoute = ProfileInfoRouteImport.update({
+  id: '/profile-info',
+  path: '/profile-info',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileAccountRoute = ProfileAccountRouteImport.update({
+  id: '/profile-account',
+  path: '/profile-account',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -79,6 +91,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/marketplace': typeof MarketplaceRoute
   '/profile': typeof ProfileRoute
+  '/profile-account': typeof ProfileAccountRoute
+  '/profile-info': typeof ProfileInfoRoute
   '/activity/$id': typeof ActivityIdRoute
   '/campaign/$id': typeof CampaignIdRoute
   '/activity/': typeof ActivityIndexRoute
@@ -91,6 +105,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/marketplace': typeof MarketplaceRoute
   '/profile': typeof ProfileRoute
+  '/profile-account': typeof ProfileAccountRoute
+  '/profile-info': typeof ProfileInfoRoute
   '/activity/$id': typeof ActivityIdRoute
   '/campaign/$id': typeof CampaignIdRoute
   '/activity': typeof ActivityIndexRoute
@@ -104,6 +120,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/marketplace': typeof MarketplaceRoute
   '/profile': typeof ProfileRoute
+  '/profile-account': typeof ProfileAccountRoute
+  '/profile-info': typeof ProfileInfoRoute
   '/activity/$id': typeof ActivityIdRoute
   '/campaign/$id': typeof CampaignIdRoute
   '/activity/': typeof ActivityIndexRoute
@@ -118,6 +136,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/marketplace'
     | '/profile'
+    | '/profile-account'
+    | '/profile-info'
     | '/activity/$id'
     | '/campaign/$id'
     | '/activity/'
@@ -130,6 +150,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/marketplace'
     | '/profile'
+    | '/profile-account'
+    | '/profile-info'
     | '/activity/$id'
     | '/campaign/$id'
     | '/activity'
@@ -142,6 +164,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/marketplace'
     | '/profile'
+    | '/profile-account'
+    | '/profile-info'
     | '/activity/$id'
     | '/campaign/$id'
     | '/activity/'
@@ -155,6 +179,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MarketplaceRoute: typeof MarketplaceRoute
   ProfileRoute: typeof ProfileRoute
+  ProfileAccountRoute: typeof ProfileAccountRoute
+  ProfileInfoRoute: typeof ProfileInfoRoute
   ActivityIdRoute: typeof ActivityIdRoute
   CampaignIdRoute: typeof CampaignIdRoute
   ActivityIndexRoute: typeof ActivityIndexRoute
@@ -162,6 +188,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/profile-info': {
+      id: '/profile-info'
+      path: '/profile-info'
+      fullPath: '/profile-info'
+      preLoaderRoute: typeof ProfileInfoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile-account': {
+      id: '/profile-account'
+      path: '/profile-account'
+      fullPath: '/profile-account'
+      preLoaderRoute: typeof ProfileAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -243,6 +283,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MarketplaceRoute: MarketplaceRoute,
   ProfileRoute: ProfileRoute,
+  ProfileAccountRoute: ProfileAccountRoute,
+  ProfileInfoRoute: ProfileInfoRoute,
   ActivityIdRoute: ActivityIdRoute,
   CampaignIdRoute: CampaignIdRoute,
   ActivityIndexRoute: ActivityIndexRoute,
