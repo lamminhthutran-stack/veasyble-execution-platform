@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle2, AlertCircle, Info, BellRing, X } from "lucide-
 import { useStore } from "@/lib/store";
 import { CAMPAIGNS } from "@/lib/mock-data";
 import { useEffect, useState } from "react";
+import { AppShell } from "@/components/AppShell";
 
 export const Route = createFileRoute("/notifications")({
   head: () => ({
@@ -18,7 +19,7 @@ function formatDate(dateStr: string) {
 
 function NotificationsPage() {
   const navigate = useNavigate();
-  const { activity, notifications, markAsRead } = useStore();
+  const { activity, notifications, markAsRead, markAllAsRead } = useStore();
   const [activeTab, setActiveTab] = useState<"all" | "unread">("all");
   const [selectedNoti, setSelectedNoti] = useState<any | null>(null);
 
@@ -56,22 +57,33 @@ function NotificationsPage() {
     : allNotifications.filter((n) => !n.read);
 
   return (
-    <div className="mx-auto max-w-md min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-30 bg-background/85 backdrop-blur-xl border-b border-border/60">
-        <div className="flex items-center gap-3 h-14 px-4">
-          <button
-            onClick={() => {
-              if (typeof window !== "undefined" && window.history && window.history.length > 1) {
-                window.history.back();
-              } else {
-                navigate({ to: "/dashboard" });
-              }
-            }}
-            className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <h1 className="text-base font-semibold tracking-tight">Notifications</h1>
+    <AppShell>
+      <div className="bg-background pb-10">
+        <header className="sticky top-0 z-30 bg-background/85 backdrop-blur-xl border-b border-border/60">
+        <div className="flex items-center justify-between h-14 px-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                if (typeof window !== "undefined" && window.history && window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  navigate({ to: "/dashboard" });
+                }
+              }}
+              className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <h1 className="text-base font-semibold tracking-tight">Notifications</h1>
+          </div>
+          {unreadCount > 0 && (
+            <button
+              onClick={() => markAllAsRead()}
+              className="text-xs font-semibold text-primary hover:text-primary-glow cursor-pointer active:scale-95 transition-all px-2.5 py-1.5 rounded-lg hover:bg-secondary/50"
+            >
+              Mark all as read
+            </button>
+          )}
         </div>
 
         {/* Tab switch buttons for All and Unread */}
@@ -128,16 +140,16 @@ function NotificationsPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className={`font-semibold text-[14px] leading-snug ${!n.read ? "text-foreground font-bold" : "text-muted-foreground font-medium"}`}>{n.title}</span>
+                      <span className={`text-[14px] leading-snug ${!n.read ? "text-foreground font-bold" : "text-muted-foreground font-medium"}`}>{n.title}</span>
                       <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">{n.time}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-1">{n.message}</p>
+                    <p className={`text-xs mt-1 leading-relaxed line-clamp-1 ${!n.read ? "text-foreground/80 font-medium" : "text-muted-foreground font-normal"}`}>{n.message}</p>
                   </div>
                 </div>
 
                 {/* Right red dot for unread items */}
                 {!n.read && (
-                  <span className="h-2.5 w-2.5 rounded-full bg-destructive shrink-0 ml-2 shadow-sm animate-pulse" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-red-500 shrink-0 ml-2 shadow-sm" />
                 )}
               </div>
             );
@@ -230,6 +242,7 @@ function NotificationsPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AppShell>
   );
 }

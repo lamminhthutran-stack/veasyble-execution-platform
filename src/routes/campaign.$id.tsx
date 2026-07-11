@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { CAMPAIGNS, formatVND, type Campaign } from "@/lib/mock-data";
 import { useStore } from "@/lib/store";
 import { ArrowLeft, MapPin, Calendar, CheckCircle2, Store } from "lucide-react";
+import { AppShell } from "@/components/AppShell";
 
 export const Route = createFileRoute("/campaign/$id")({
   component: CampaignDetail,
@@ -118,8 +119,9 @@ function CampaignDetail() {
   }
 
   return (
-    <div className="mx-auto max-w-md min-h-screen bg-background pb-32">
-      {/* Cover Image Block */}
+    <AppShell>
+      <div className="pb-36 bg-background">
+        {/* Cover Image Block */}
       <div className="relative w-full h-56 text-white overflow-hidden">
         <img
           src={coverUrl}
@@ -231,7 +233,7 @@ function CampaignDetail() {
       </section>
 
       {/* Fixed Bottom Register Footer */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-background/95 backdrop-blur-xl border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))] z-30">
+      <div className="fixed bottom-[60px] left-1/2 -translate-x-1/2 w-full max-w-md bg-background/95 backdrop-blur-xl border-t border-border p-4 z-30">
         {alreadyRegistered ? (
           <button disabled className="w-full h-12 rounded-xl bg-muted text-muted-foreground font-semibold flex items-center justify-center gap-2">
             <CheckCircle2 className="h-5 w-5" /> Already registered
@@ -245,6 +247,7 @@ function CampaignDetail() {
           </button>
         )}
       </div>
-    </div>
+      </div>
+    </AppShell>
   );
 }

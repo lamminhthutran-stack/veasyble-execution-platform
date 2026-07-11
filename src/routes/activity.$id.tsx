@@ -22,6 +22,7 @@ import {
   Calendar
 } from "lucide-react";
 import { useState } from "react";
+import { AppShell } from "@/components/AppShell";
 
 export const Route = createFileRoute("/activity/$id")({
   component: ActivityDetail,
@@ -264,8 +265,9 @@ function ActivityDetail() {
   }
 
   return (
-    <div className="mx-auto max-w-md min-h-screen bg-background pb-32">
-      {/* Cover Image Block */}
+    <AppShell>
+      <div className="pb-36 bg-background">
+        {/* Cover Image Block */}
       <div className="relative w-full h-56 text-white overflow-hidden">
         <img
           src={CAMPAIGN_COVER_IMAGES[c.id] || "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=600"}
@@ -522,7 +524,7 @@ function ActivityDetail() {
 
       {/* Dynamic footer buttons based on tracking status flow */}
       {entry.step !== "approved" && (
-        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-background/95 backdrop-blur-xl border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-2 z-30">
+        <div className="fixed bottom-[60px] left-1/2 -translate-x-1/2 w-full max-w-md bg-background/95 backdrop-blur-xl border-t border-border p-4 space-y-2 z-30">
           {resolvedStep === "step1_registered" && (
             <button
               disabled
@@ -795,7 +797,8 @@ function ActivityDetail() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AppShell>
   );
 }
 

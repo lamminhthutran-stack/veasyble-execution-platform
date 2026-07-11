@@ -94,12 +94,16 @@ function Earnings() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-foreground">Select Month</h2>
           <div className="relative">
-            <input 
-              type="month" 
+            <select 
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-card border border-border/60 text-sm font-medium rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-primary/20 outline-none"
-            />
+              className="bg-card border border-border/60 text-sm font-semibold rounded-xl px-3 py-1.5 focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
+            >
+              <option value="2026-05">05/2026</option>
+              <option value="2026-06">06/2026</option>
+              <option value="2026-07">07/2026</option>
+              <option value="2026-08">08/2026</option>
+            </select>
           </div>
         </div>
 
