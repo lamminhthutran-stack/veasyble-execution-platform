@@ -31,17 +31,23 @@ function Earnings() {
   ];
 
   const displayedCampaigns = allCampaigns.filter((a) => {
+    const isPaid = a.step === "approved" && a.registeredAt.startsWith("2026-06");
+    const isPending = a.step === "step5_review" || (a.step === "approved" && !isPaid);
+
     if (statusFilter === "all") return true;
-    if (statusFilter === "paid") return a.step === "approved";
-    if (statusFilter === "pending") return a.step === "step5_review";
+    if (statusFilter === "paid") return isPaid;
+    if (statusFilter === "pending") return isPending;
     if (statusFilter === "in_progress") {
       return a.step !== "approved" && a.step !== "step5_review";
     }
     return true;
   });
 
-  const pending = resolvedFilteredActivity.filter(a => a.step === "step5_review").reduce((s, a) => s + (CAMPAIGNS.find((c) => c.id === a.campaignId)?.compensation ?? 0), 0);
-  const paid = filteredHistory.reduce((s, a) => s + (CAMPAIGNS.find((c) => c.id === a.campaignId)?.compensation ?? 0), 0);
+  const pending = 
+    resolvedFilteredActivity.filter(a => a.step === "step5_review").reduce((s, a) => s + (CAMPAIGNS.find((c) => c.id === a.campaignId)?.compensation ?? 0), 0) +
+    filteredHistory.filter(a => a.registeredAt.startsWith("2026-07")).reduce((s, a) => s + (CAMPAIGNS.find((c) => c.id === a.campaignId)?.compensation ?? 0), 0);
+
+  const paid = filteredHistory.filter(a => !a.registeredAt.startsWith("2026-07")).reduce((s, a) => s + (CAMPAIGNS.find((c) => c.id === a.campaignId)?.compensation ?? 0), 0);
 
   function getPreviousMonth(monthStr: string) {
     const [y, m] = monthStr.split("-").map(Number);
@@ -194,15 +200,21 @@ function Earnings() {
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-bold">{formatVND(c.compensation)}</div>
-                    <div className={`text-[10px] font-semibold ${
-                      a.step === "approved" 
-                        ? "text-success" 
-                        : (a.step === "step5_review" || a.proofUploaded) 
-                          ? "text-amber-600" 
-                          : "text-muted-foreground"
-                    }`}>
-                      {a.step === "approved" ? "Paid" : (a.step === "step5_review" || a.proofUploaded) ? "Pending" : "In Progress"}
-                    </div>
+                    {(() => {
+                      const isPaid = a.step === "approved" && a.registeredAt.startsWith("2026-06");
+                      const isPending = a.step === "step5_review" || a.proofUploaded || (a.step === "approved" && !isPaid);
+                      return (
+                        <div className={`text-[10px] font-semibold ${
+                          isPaid 
+                            ? "text-success" 
+                            : isPending 
+                              ? "text-amber-600" 
+                              : "text-muted-foreground"
+                        }`}>
+                          {isPaid ? "Paid" : isPending ? "Pending" : "In Progress"}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               );

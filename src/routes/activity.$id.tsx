@@ -16,13 +16,40 @@ import {
   Image,
   Folder,
   X,
-  Loader2
+  Loader2,
+  Store,
+  MapPin,
+  Calendar
 } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/activity/$id")({
   component: ActivityDetail,
 });
+
+const CAMPAIGN_COVER_IMAGES: Record<string, string> = {
+  "c-001": "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600",
+  "c-002": "https://images.unsplash.com/photo-1527018601619-a508a2be00cd?w=600",
+  "c-003": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600",
+  "c-004": "https://images.unsplash.com/photo-1600718374662-0483d2b9da44?w=600",
+  "c-005": "https://images.unsplash.com/photo-1582408921715-18e7806365c1?w=600",
+  "c-006": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600",
+  "c-007": "https://images.unsplash.com/photo-1563013544-824ae1d704d3?w=600",
+  "c-008": "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600",
+  "c-009": "https://images.unsplash.com/photo-1542838132-92c53300491e?w=600",
+  "c-010": "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600",
+  "c-011": "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=600",
+  "c-012": "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600",
+  "c-013": "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600",
+  "c-014": "https://images.unsplash.com/photo-1599490659213-e2b9527ec087?w=600",
+  "c-015": "https://images.unsplash.com/photo-1550547660-d9450f859349?w=600",
+  "c-016": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600",
+  "c-017": "https://images.unsplash.com/photo-1622543956221-a396e9b152e4?w=600",
+  "c-018": "https://images.unsplash.com/photo-1607344645866-009c320c5ab8?w=600",
+  "c-019": "https://images.unsplash.com/photo-1559599101-f09722fb4948?w=600",
+  "c-020": "https://images.unsplash.com/photo-1566633806327-68e152aaf26d?w=600",
+  "c-021": "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600",
+};
 
 const flow: CampaignStep[] = [
   "step1_registered",
@@ -107,6 +134,9 @@ function getStepStatus(
     if (entry.printingDone || entry.step === "step3_execution" || entry.step === "step5_review") {
       return "completed";
     }
+    if (entry.step === "step2_printing") {
+      return "in-progress";
+    }
     if (todayStr >= c.productionStart) {
       return "in-progress";
     }
@@ -117,6 +147,12 @@ function getStepStatus(
     if (entry.step === "step5_review") {
       return "completed";
     }
+    if (entry.step === "step3_execution" && (entry.executionStarted || entry.rejectionReason)) {
+      return "completed";
+    }
+    if (entry.step === "step3_execution") {
+      return "in-progress";
+    }
     if (todayStr >= c.executionStart) {
       return "in-progress";
     }
@@ -125,6 +161,9 @@ function getStepStatus(
 
   if (step === "step5_review") {
     if (entry.step === "step5_review") {
+      return "in-progress";
+    }
+    if (entry.step === "step3_execution" && (entry.executionStarted || entry.rejectionReason)) {
       return "in-progress";
     }
     return "pending";
@@ -226,73 +265,117 @@ function ActivityDetail() {
 
   return (
     <div className="mx-auto max-w-md min-h-screen bg-background pb-32">
-      <header className="sticky top-0 z-30 bg-background/85 backdrop-blur-xl border-b border-border/60">
-        <div className="flex items-center gap-3 h-14 px-4">
-          <button
-            onClick={() => {
-              if (typeof window !== "undefined" && window.history && window.history.length > 1) {
-                window.history.back();
-              } else {
-                navigate({ to: "/activity" });
-              }
-            }}
-            className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <div className="min-w-0 flex-1">
-            <h1 className="font-semibold text-sm truncate text-foreground">{c.title}</h1>
-          </div>
-        </div>
-      </header>
+      {/* Cover Image Block */}
+      <div className="relative w-full h-56 text-white overflow-hidden">
+        <img
+          src={CAMPAIGN_COVER_IMAGES[c.id] || "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=600"}
+          alt={c.title}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/20" />
+        <button
+          onClick={() => {
+            if (typeof window !== "undefined" && window.history && window.history.length > 1) {
+              window.history.back();
+            } else {
+              navigate({ to: "/activity" });
+            }
+          }}
+          className="absolute top-4 left-4 h-9 w-9 rounded-full bg-black/40 backdrop-blur flex items-center justify-center cursor-pointer active:scale-95 transition-transform z-20 text-white"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+      </div>
 
-      <div className="px-5 pt-5">
-        <div className="bg-card rounded-2xl border border-border/60 p-4 shadow-card">
-          <div className="flex items-center justify-between">
+      {/* Main Campaign Info Card (Overlap mt-12, Split 3:7) */}
+      <div className="px-5 -mt-12 relative z-10">
+        <div className="bg-card rounded-2xl border border-border/60 p-4 flex items-center gap-4 shadow-card">
+          {/* Left: 30% Brand Logo */}
+          <div className="w-[30%] flex justify-center items-center shrink-0">
+            <div
+              className="w-24 h-24 rounded-2xl flex items-center justify-center text-white font-extrabold text-5xl shadow-sm border border-white/20 select-none"
+              style={{ backgroundColor: c.brandColor }}
+            >
+              {c.brand.charAt(0)}
+            </div>
+          </div>
+
+          {/* Right: 70% content area */}
+          <div className="w-[70%] space-y-2.5 min-w-0">
             <div>
-              <div className="text-xs text-muted-foreground font-semibold tracking-wide">Compensation</div>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-2xl font-bold font-display text-primary">{formatVND(c.compensation)}</span>
-                {(entry.step === "approved" || entry.step === "step5_review") && (
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full select-none ${
-                    entry.step === "approved" 
-                      ? "bg-success/15 text-success border border-success/20" 
-                      : "bg-amber-500/15 text-amber-600 border border-amber-500/20"
-                  }`}>
-                    {entry.step === "approved" ? "Paid" : "Pending"}
-                  </span>
-                )}
+              <div className="text-[10px] text-muted-foreground font-bold tracking-wider uppercase">{c.brand}</div>
+              <h1 className="font-bold text-base text-foreground leading-snug mt-0.5" title={c.title}>
+                {c.title}
+              </h1>
+            </div>
+
+            <div className="space-y-1.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Store className="h-4 w-4 shrink-0 opacity-70" />
+                <span>{c.retailer}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 shrink-0 opacity-70" />
+                <span className="truncate">{c.location}, {c.city}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 shrink-0 opacity-70" />
+                <span>{formatDate(c.windowStart)} → {formatDate(c.windowEnd)}</span>
               </div>
             </div>
-            {entry.step !== "approved" && (
-              <div className="text-right">
-                <div className="text-xs text-muted-foreground font-semibold tracking-wide">Deadline</div>
-                <div className="text-sm font-semibold mt-1">{formatDate(c.deadline)}</div>
+
+            <div className="pt-2 border-t border-border/40 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground font-medium">Compensation</span>
+                {(entry.step === "approved" || entry.step === "step5_review") && (
+                  (() => {
+                    const isPaid = entry.step === "approved" && entry.registeredAt.startsWith("2026-06");
+                    return (
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full select-none ${
+                        isPaid 
+                          ? "bg-success/15 text-success border border-success/20" 
+                          : "bg-amber-500/15 text-amber-600 border border-amber-500/20"
+                      }`}>
+                        {isPaid ? "Paid" : "Pending"}
+                      </span>
+                    );
+                  })()
+                )}
               </div>
-            )}
+              <span className="text-lg font-bold font-display text-primary">{formatVND(c.compensation)}</span>
+            </div>
           </div>
         </div>
+      </div>
 
-        {entry.rejectionReason && (
-          <div className="mt-4 rounded-2xl bg-destructive/10 border border-destructive/30 p-4">
+      {entry.rejectionReason && (
+        <div className="px-5 mt-4">
+          <div className="rounded-2xl bg-destructive/10 border border-destructive/30 p-4">
             <div className="flex items-center gap-2 text-destructive font-semibold text-sm">
               <AlertCircle className="h-4 w-4" /> Proof rejected
             </div>
             <p className="text-sm mt-1 text-destructive/90">{entry.rejectionReason}</p>
-            <p className="text-xs mt-2 text-muted-foreground">Resubmit before the campaign deadline.</p>
+            <p className="text-xs mt-2 text-muted-foreground">
+              Please continue under the <strong className="text-destructive font-bold">Execution in Progress</strong> step below to upload and resubmit new proof files.
+            </p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Campaign Description */}
+      <section className="px-5 mt-6">
+        <h2 className="text-lg font-semibold text-foreground mb-3">Campaign Description</h2>
+        <p className="text-[14px] text-muted-foreground leading-relaxed">{c.brief}</p>
+      </section>
 
       {/* Execution steps timeline vertical list */}
       <section className="px-5 mt-6">
-        <h2 className="text-xs font-bold text-primary mb-4">Execution Steps</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">Execution Steps</h2>
         <div className="flex flex-col">
           {flow.map((s, idx) => {
             const status = getStepStatus(s, entry, c, todayStr);
             const isLast = idx === flow.length - 1;
 
-            // Determine connector line color based on the next step status
             let lineColorClass = "bg-border/60";
             if (!isLast) {
               const nextStep = flow[idx + 1];
@@ -306,7 +389,6 @@ function ActivityDetail() {
 
             return (
               <div key={s} className="flex gap-4 min-h-[70px] last:min-h-0">
-                {/* Left timeline indicator */}
                 <div className="flex flex-col items-center shrink-0 w-6">
                   {status === "completed" ? (
                     <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm shrink-0">
@@ -324,7 +406,6 @@ function ActivityDetail() {
                   {!isLast && <div className={`w-[2px] grow ${lineColorClass} my-1`} />}
                 </div>
 
-                {/* Right content */}
                 <div className="pb-5">
                   <div className={`text-sm font-semibold leading-tight ${
                     status === "completed" ? "text-foreground" : status === "in-progress" ? "text-primary" : "text-muted-foreground"
@@ -345,65 +426,67 @@ function ActivityDetail() {
         </div>
       </section>
 
-      {/* Completed Campaign Detailed Information Blocks */}
-      {entry.step === "approved" && (
-        <>
-          {/* Campaign Description */}
-          <section className="px-5 mt-4">
-            <div className="bg-card rounded-2xl border border-border/60 p-4 space-y-2 shadow-sm">
-              <h3 className="font-bold text-sm text-foreground">Campaign Description</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">{c.brief}</p>
-            </div>
-          </section>
+      {/* Media Spaces Section */}
+      <section className="px-5 mt-6">
+        <h2 className="text-lg font-semibold text-foreground mb-3">Media Spaces</h2>
+        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory">
+          {mediaSpaces.map((ms) => (
+            <div key={ms.id} className="w-[85%] shrink-0 snap-start bg-card rounded-2xl border border-border/60 p-4 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="font-semibold text-sm text-foreground truncate">{ms.name}</div>
+                <div className="text-[11px] text-muted-foreground mt-0.5">Location: <span className="font-medium text-foreground">{ms.location}</span></div>
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-3">{ms.requirement}</p>
+              </div>
 
-          {/* Campaign Execution Timeline */}
-          <section className="px-5 mt-4">
-            <div className="bg-card rounded-2xl border border-border/60 p-4 space-y-3 shadow-sm">
-              <h3 className="font-bold text-sm text-foreground border-b border-border/40 pb-2">Campaign Execution Timeline</h3>
-              <div className="space-y-2">
-                <TimelineDateRow label="Registration Period" date={getPeriodString(c.windowStart, addDays(c.productionStart, -1))} />
-                <TimelineDateRow label="Printing & Production" date={getPeriodString(c.productionStart, addDays(c.executionStart, -1))} />
-                <TimelineDateRow label="Execution Period" date={getPeriodString(c.executionStart, addDays(c.deadline, -1))} />
-                <TimelineDateRow label="Under Review" date={formatDate(c.deadline)} />
+              <div className="mt-4">
+                <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-2">Retailer Reference Photos</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {ms.images.map((imgUrl, idx) => (
+                    <div key={idx} className="aspect-video rounded-lg overflow-hidden bg-muted border border-border/40">
+                      <img
+                        src={imgUrl}
+                        alt={`${ms.name} ref ${idx}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </section>
+          ))}
+        </div>
+      </section>
 
-          {/* Executor's Exact Execution Timeline */}
-          <section className="px-5 mt-4">
-            <div className="bg-card rounded-2xl border border-border/60 p-4 space-y-3 shadow-sm">
-              <h3 className="font-bold text-sm text-foreground border-b border-border/40 pb-2">Executor's Exact Execution Timeline</h3>
-              <div className="space-y-2">
-                <TimelineDateRow label="Registered On" date={formatDateTime(entry.registeredAt)} />
-                <TimelineDateRow label="Printing Completed On" date={formatDateTime(c.productionStart + "T10:45:00")} />
-                <TimelineDateRow label="Setup Started On" date={formatDateTime(c.executionStart + "T14:20:00")} />
-                <TimelineDateRow label="Proof Submitted On" date={formatDateTime(addDays(c.executionStart, 1) + "T16:15:00")} />
-                <TimelineDateRow label="Approved On" date={formatDateTime(addDays(c.executionStart, 2) + "T11:05:00")} />
-                <TimelineDateRow label="Paid On" date={formatDateTime(addDays(c.executionStart, 2) + "T14:30:00")} highlight />
-              </div>
-            </div>
-          </section>
-        </>
-      )}
+      {/* Media Space Proofs Section (Visible for all campaigns) */}
+      <section className="px-5 mt-6">
+        <h2 className="text-lg font-semibold text-foreground mb-3">Media Space Proofs</h2>
+        {!(entry.executionStarted || entry.rejectionReason || entry.step === "step5_review" || entry.step === "approved") ? (
+          <p className="text-xs text-muted-foreground italic bg-secondary/35 rounded-xl p-3 border border-border/40">
+            No proofs uploaded yet. You can submit proofs once campaign execution starts.
+          </p>
+        ) : (
+          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory">
+            {mediaSpaces.map((ms) => {
+              // If user has uploaded new proofs, display them. Otherwise display the mock fallback representing previously submitted proofs.
+              const hasNewProofs = !!proofs[ms.id] && proofs[ms.id].length > 0;
+              const msProofs = hasNewProofs ? proofs[ms.id] : [
+                { id: "demo-p1", url: MOCK_PROOFS[0].url, type: "image" as const },
+                { id: "demo-p2", url: MOCK_PROOFS[1].url, type: "image" as const },
+                { id: "demo-p3", url: MOCK_PROOFS[3].url, type: "video" as const }
+              ];
 
-      {/* Read-Only Submitted Proofs Section (Visible at the bottom ONLY after submitting proof) */}
-      {(resolvedStep === "step5_review" || entry.step === "approved") && (
-        <section className="px-5 mt-4">
-          <div className="bg-card rounded-2xl border border-border/60 p-4 space-y-4 shadow-sm">
-            <h3 className="font-bold text-sm text-foreground border-b border-border/40 pb-2">Media Space Proofs</h3>
-            <div className="space-y-4">
-              {mediaSpaces.map((ms) => {
-                // Read from state, if page is reloaded fallback to demo visual items
-                const msProofs = proofs[ms.id] || [
-                  { id: "demo-p1", url: MOCK_PROOFS[0].url, type: "image" as const },
-                  { id: "demo-p2", url: MOCK_PROOFS[1].url, type: "image" as const },
-                  { id: "demo-p3", url: MOCK_PROOFS[3].url, type: "video" as const }
-                ];
+              return (
+                <div key={ms.id} className="w-[85%] shrink-0 snap-start bg-card rounded-2xl border border-border/60 p-4 shadow-sm flex flex-col justify-between">
+                  <div>
+                    <div className="font-semibold text-sm text-foreground truncate">{ms.name}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">Location: <span className="font-medium text-foreground">{ms.location}</span></div>
+                  </div>
 
-                return (
-                  <div key={ms.id} className="space-y-2">
-                    <div className="text-xs font-bold text-foreground leading-snug">{ms.name}</div>
-                    <div className="grid grid-cols-4 gap-2">
+                  <div className="mt-4">
+                    <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-2">
+                      {hasNewProofs ? "New Proof Files" : "Previous Submitted Proof"}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
                       {msProofs.map((p) => (
                         <div key={p.id} className="relative aspect-square rounded-xl overflow-hidden border border-border/50 bg-secondary">
                           {p.type === "image" ? (
@@ -415,9 +498,24 @@ function ActivityDetail() {
                       ))}
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Executor's Exact Execution Timeline (re-ordered at the very bottom, without card styling) */}
+      {entry.step === "approved" && (
+        <section className="px-5 mt-6">
+          <h2 className="text-lg font-semibold text-foreground mb-3">Executor's Exact Execution Timeline</h2>
+          <div className="space-y-2.5">
+            <TimelineDateRow label="Registered On" date={formatDateTime(entry.registeredAt)} />
+            <TimelineDateRow label="Printing Completed On" date={formatDateTime(c.productionStart + "T10:45:00")} />
+            <TimelineDateRow label="Setup Started On" date={formatDateTime(c.executionStart + "T14:20:00")} />
+            <TimelineDateRow label="Proof Submitted On" date={formatDateTime(addDays(c.executionStart, 1) + "T16:15:00")} />
+            <TimelineDateRow label="Approved On" date={formatDateTime(addDays(c.executionStart, 2) + "T11:05:00")} />
+            <TimelineDateRow label="Paid On" date={formatDateTime(addDays(c.executionStart, 2) + "T14:30:00")} highlight />
           </div>
         </section>
       )}
@@ -459,7 +557,7 @@ function ActivityDetail() {
           )}
 
           {resolvedStep === "step3_execution" && (
-            !entry.executionStarted ? (
+            !(entry.executionStarted || entry.rejectionReason) ? (
               <button
                 onClick={() => startExecution(c.id)}
                 className="w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground font-semibold shadow-card flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] transition-transform"
@@ -768,7 +866,12 @@ function StepAction({ step, entry, onAccessAssets }: { step: CampaignStep; entry
     return (
       <div className="mt-2 space-y-2">
         <p className="text-xs text-muted-foreground flex items-center gap-1">
-          <Camera className="h-3.5 w-3.5" /> {entry.executionStarted ? "Take photo proof of the completed setup and submit." : "Go to the store and start execution setup."}
+          <Camera className="h-3.5 w-3.5" /> 
+          {entry.rejectionReason 
+            ? "Rejection Alert: Upload new proof files and resubmit." 
+            : entry.executionStarted 
+              ? "Take photo proof of the completed setup and submit." 
+              : "Go to the store and start execution setup."}
         </p>
         <button
           onClick={onAccessAssets}

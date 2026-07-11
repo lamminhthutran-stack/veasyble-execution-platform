@@ -54,6 +54,7 @@ type State = {
   resume: () => void;
   updateProfile: (p: Partial<Profile>) => void;
   markAllAsRead: () => void;
+  markAsRead: (id: string) => void;
 };
 
 const stepOrder: CampaignStep[] = [
@@ -65,6 +66,7 @@ const stepOrder: CampaignStep[] = [
 
 export function resolveActivityStep(a: ActivityEntry): CampaignStep {
   if (a.step === "approved") return "approved";
+  if (a.step === "step3_execution") return "step3_execution";
   if (a.step === "step5_review" || a.proofUploaded) return "step5_review";
   
   const c = CAMPAIGNS.find((x) => x.id === a.campaignId);
@@ -224,7 +226,7 @@ export const useStore = create<State>()(
         };
         set({
           activity: get().activity.map((a) =>
-            a.campaignId === campaignId ? { ...a, step: "step3_execution", rejectionReason: reason, executionStarted: false } : a,
+            a.campaignId === campaignId ? { ...a, step: "step3_execution", rejectionReason: reason, executionStarted: true, proofUploaded: false } : a,
           ),
           notifications: [newNoti, ...get().notifications],
         });
@@ -241,6 +243,12 @@ export const useStore = create<State>()(
       markAllAsRead: () =>
         set({
           notifications: get().notifications.map((n) => ({ ...n, read: true })),
+        }),
+      markAsRead: (id) =>
+        set({
+          notifications: get().notifications.map((n) =>
+            n.id === id ? { ...n, read: true } : n
+          ),
         }),
     }),
     { name: "veasyble-executor" },
