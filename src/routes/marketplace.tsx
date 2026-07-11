@@ -33,35 +33,43 @@ function Marketplace() {
   }, [tab, q, takenIds]);
 
   return (
-    <AppShell title="Marketplace">
-      <div className="px-5 pt-4">
-        <div className="flex gap-2">
-          <div className="flex-1 flex items-center gap-2 h-11 rounded-xl bg-card border border-input px-3">
-            <Search className="h-4 w-4 text-muted-foreground" />
+    <AppShell
+      title="Marketplace"
+      right={
+        <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end ml-4">
+          <div className="flex-1 flex items-center gap-1.5 h-9 rounded-lg bg-secondary border border-border/40 px-2 max-w-[320px] min-w-0">
+            <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search brand, retailer, campaign…"
-              className="flex-1 bg-transparent text-sm focus:outline-none"
+              placeholder="Search…"
+              className="w-full bg-transparent text-xs focus:outline-none placeholder:text-muted-foreground min-w-0 text-foreground"
             />
           </div>
-          <button className="h-11 w-11 rounded-xl bg-card border border-input flex items-center justify-center">
-            <SlidersHorizontal className="h-4 w-4" />
+          <button className="h-9 w-9 rounded-lg bg-secondary border border-border/40 flex items-center justify-center shrink-0 cursor-pointer active:scale-95 transition-all">
+            <SlidersHorizontal className="h-3.5 w-3.5 text-foreground" />
           </button>
         </div>
-
-        <div className="mt-4 grid grid-cols-2 bg-secondary rounded-xl p-1">
-          {(["recommended", "all"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`h-9 rounded-lg text-sm font-semibold capitalize transition-colors ${
-                tab === t ? "bg-card shadow-card text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              {t === "recommended" ? "Recommended" : "All"}
-            </button>
-          ))}
+      }
+    >
+      <div className="px-5 pt-3.5">
+        <div className="grid grid-cols-2">
+          {(["recommended", "all"] as const).map((t) => {
+            const active = tab === t;
+            return (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`pb-2 text-sm font-semibold capitalize transition-all cursor-pointer border-b-2 text-center ${
+                  active
+                    ? "text-primary border-primary font-bold"
+                    : "text-muted-foreground border-transparent hover:text-foreground"
+                }`}
+              >
+                {t === "recommended" ? "Recommended" : "All"}
+              </button>
+            );
+          })}
         </div>
 
         <div className="mt-4 space-y-3">

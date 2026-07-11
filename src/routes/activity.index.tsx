@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { CampaignCard } from "@/components/CampaignCard";
-import { useStore, stepOrder } from "@/lib/store";
+import { useStore, stepOrder, resolveActivityStep } from "@/lib/store";
 import { History } from "lucide-react";
 import { useState } from "react";
 import { STEP_LABELS, type CampaignStep } from "@/lib/mock-data";
@@ -18,14 +18,29 @@ export const Route = createFileRoute("/activity/")({
 
 function Activity() {
   const { activity } = useStore();
-  const [selectedStage, setSelectedStage] = useState<CampaignStep | "All">("All");
+  
+  // Dynamically resolve current campaign steps based on date rules
+  const resolvedActivity = activity.map(a => ({
+    ...a,
+    step: resolveActivityStep(a)
+  }));
 
-  // Always show all 5 steps in the filter navigation bar
+  const [selectedStage, setSelectedStage] = useState<CampaignStep | "All">(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam === "step1_registered") {
+        return "step1_registered";
+      }
+    }
+    return "All";
+  });
+
   const availableStages = stepOrder;
 
   const filteredActivity = selectedStage === "All" 
-    ? activity 
-    : activity.filter(a => a.step === selectedStage);
+    ? resolvedActivity 
+    : resolvedActivity.filter(a => a.step === selectedStage);
 
   return (
     <AppShell
@@ -57,7 +72,7 @@ function Activity() {
         </div>
 
         <div className="space-y-3 pb-20">
-          {activity.length === 0 && (
+          {resolvedActivity.length === 0 && (
             <div className="text-center py-16">
               <div className="text-sm text-muted-foreground">No in-progress campaigns.</div>
               <Link to="/marketplace" className="inline-block mt-3 text-primary font-semibold text-sm">
@@ -65,7 +80,7 @@ function Activity() {
               </Link>
             </div>
           )}
-          {activity.length > 0 && filteredActivity.length === 0 && (
+          {resolvedActivity.length > 0 && filteredActivity.length === 0 && (
             <div className="text-center py-16">
               <div className="text-sm text-muted-foreground">No campaigns in this stage.</div>
             </div>

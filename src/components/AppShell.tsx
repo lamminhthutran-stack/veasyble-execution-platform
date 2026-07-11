@@ -24,7 +24,7 @@ export function AppShell({ children, title, right }: { children: ReactNode; titl
           </header>
         )}
         <main>{children}</main>
-        <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-card/95 backdrop-blur-xl border-t border-border">
+        <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-card/95 backdrop-blur-xl border-t border-border z-40">
           <ul className="grid grid-cols-5 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
             {nav.map((n) => {
               const active = pathname.startsWith(n.to);

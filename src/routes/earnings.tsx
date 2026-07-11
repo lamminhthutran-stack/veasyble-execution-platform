@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useStore } from "@/lib/store";
+import { useStore, resolveActivityStep } from "@/lib/store";
 import { CAMPAIGNS, formatVND } from "@/lib/mock-data";
-import { Download, CheckCircle2, Clock, CalendarIcon } from "lucide-react";
+import { Download, CheckCircle2, Clock, CalendarIcon, Filter, TrendingUp, TrendingDown } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/earnings")({
@@ -15,12 +15,61 @@ export const Route = createFileRoute("/earnings")({
 function Earnings() {
   const { activity, history } = useStore();
   const [selectedMonth, setSelectedMonth] = useState("2026-07");
+  const [statusFilter, setStatusFilter] = useState<"all" | "in_progress" | "pending" | "paid">("all");
 
   const filteredActivity = activity.filter(a => a.registeredAt.startsWith(selectedMonth));
   const filteredHistory = history.filter(a => a.registeredAt.startsWith(selectedMonth));
 
-  const pending = filteredActivity.reduce((s, a) => s + (CAMPAIGNS.find((c) => c.id === a.campaignId)?.compensation ?? 0), 0);
+  const resolvedFilteredActivity = filteredActivity.map(a => ({
+    ...a,
+    step: resolveActivityStep(a)
+  }));
+
+  const allCampaigns = [
+    ...filteredHistory.map(a => ({ ...a, step: "approved" as const })),
+    ...resolvedFilteredActivity
+  ];
+
+  const displayedCampaigns = allCampaigns.filter((a) => {
+    if (statusFilter === "all") return true;
+    if (statusFilter === "paid") return a.step === "approved";
+    if (statusFilter === "pending") return a.step === "step5_review";
+    if (statusFilter === "in_progress") {
+      return a.step !== "approved" && a.step !== "step5_review";
+    }
+    return true;
+  });
+
+  const pending = resolvedFilteredActivity.filter(a => a.step === "step5_review").reduce((s, a) => s + (CAMPAIGNS.find((c) => c.id === a.campaignId)?.compensation ?? 0), 0);
   const paid = filteredHistory.reduce((s, a) => s + (CAMPAIGNS.find((c) => c.id === a.campaignId)?.compensation ?? 0), 0);
+
+  function getPreviousMonth(monthStr: string) {
+    const [y, m] = monthStr.split("-").map(Number);
+    const date = new Date(y, m - 2, 1);
+    const py = date.getFullYear();
+    const pm = String(date.getMonth() + 1).padStart(2, "0");
+    return `${py}-${pm}`;
+  }
+
+  function getProjectedForMonth(monthStr: string, activityList: any[], historyList: any[]) {
+    const actSum = activityList
+      .filter(a => a.registeredAt.startsWith(monthStr))
+      .map(a => ({ ...a, step: resolveActivityStep(a) }))
+      .reduce((s, a) => s + (CAMPAIGNS.find(c => c.id === a.campaignId)?.compensation ?? 0), 0);
+    const histSum = historyList
+      .filter(a => a.registeredAt.startsWith(monthStr))
+      .reduce((s, a) => s + (CAMPAIGNS.find(c => c.id === a.campaignId)?.compensation ?? 0), 0);
+    return actSum + histSum;
+  }
+
+  const prevMonthStr = getPreviousMonth(selectedMonth);
+  const thisMonthProjected = getProjectedForMonth(selectedMonth, activity, history);
+  const prevMonthProjected = getProjectedForMonth(prevMonthStr, activity, history);
+
+  let percentChange = 0;
+  if (prevMonthProjected > 0) {
+    percentChange = ((thisMonthProjected - prevMonthProjected) / prevMonthProjected) * 100;
+  }
 
   const allPayouts = [
     { id: "P-2606", date: "2026-06-30", month: "2026-06", amount: 1620000, status: "paid" as const, count: 3 },
@@ -48,31 +97,89 @@ function Earnings() {
           </div>
         </div>
 
-        <div className="bg-gradient-hero text-foreground rounded-2xl p-5 shadow-elevated">
-          <div className="text-foreground/80 text-xs font-semibold tracking-wider">Running Monthly Total</div>
-          <div className="mt-1 text-3xl font-bold font-display">{formatVND(pending + paid)}</div>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div className="bg-white/40 rounded-xl p-3 backdrop-blur border border-white/20">
-              <div className="text-foreground/80 text-[11px] tracking-wider">Pending</div>
-              <div className="mt-1 font-bold">{formatVND(pending)}</div>
+        {/* 2x2 layout containing the 4 monthly metrics separated by vertical divider borders */}
+        <div className="bg-card border border-border/60 rounded-2xl p-4 shadow-card text-sm">
+          {/* Row 1 */}
+          <div className="grid grid-cols-2 gap-4 pb-3 border-b border-border/40">
+            {/* 1. Projected Earnings */}
+            <div className="space-y-1">
+              <div className="text-[10px] font-semibold text-muted-foreground leading-none">Projected Earnings</div>
+              <div className="flex flex-col mt-1">
+                <span className="text-[16px] font-bold font-display text-primary leading-none">
+                  {formatVND(thisMonthProjected)}
+                </span>
+                {prevMonthProjected > 0 && (
+                  <span className={`text-[9px] font-bold mt-0.5 leading-none select-none flex items-center gap-0.5 ${
+                    percentChange >= 0 ? "text-success" : "text-destructive"
+                  }`}>
+                    {percentChange >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+                    {percentChange.toFixed(0)}% vs last month
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="bg-white/40 rounded-xl p-3 backdrop-blur border border-white/20">
-              <div className="text-foreground/80 text-[11px] tracking-wider">Paid</div>
-              <div className="mt-1 font-bold">{formatVND(paid)}</div>
+
+            {/* 2. Running Monthly Total */}
+            <div className="space-y-1 pl-4 border-l border-border/40">
+              <div className="text-[10px] font-semibold text-muted-foreground leading-none">Running Monthly Total</div>
+              <div className="text-[16px] font-bold font-display text-primary mt-1">
+                {formatVND(pending + paid)}
+              </div>
+            </div>
+          </div>
+
+          {/* Row 2 */}
+          <div className="grid grid-cols-2 gap-4 pt-3">
+            {/* 3. Pending */}
+            <div className="space-y-1">
+              <div className="text-[10px] font-semibold text-muted-foreground leading-none">Pending</div>
+              <div className="text-[16px] font-bold font-display text-primary mt-1">
+                {formatVND(pending)}
+              </div>
+            </div>
+
+            {/* 4. Paid */}
+            <div className="space-y-1 pl-4 border-l border-border/40">
+              <div className="text-[10px] font-semibold text-muted-foreground leading-none">Paid</div>
+              <div className="text-[16px] font-bold font-display text-primary mt-1">
+                {formatVND(paid)}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <section className="px-5 mt-6">
-        <h2 className="text-sm font-semibold text-muted-foreground tracking-wide">Per-campaign Earnings</h2>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-foreground">Per-campaign Earnings</h2>
+            <div className="relative h-7 w-7 flex items-center justify-center rounded-lg bg-secondary/80 hover:bg-secondary active:scale-95 transition-transform cursor-pointer">
+              <Filter className="h-4 w-4 text-foreground/80" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              >
+                <option value="all">All</option>
+                <option value="in_progress">In Progress</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+              </select>
+            </div>
+          </div>
+          {statusFilter !== "all" && (
+            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wider">
+              {statusFilter === "in_progress" ? "In Progress" : statusFilter}
+            </span>
+          )}
+        </div>
         <div className="mt-2 flex flex-col">
-          {[...filteredHistory, ...filteredActivity].length === 0 ? (
+          {displayedCampaigns.length === 0 ? (
             <div className="text-sm text-muted-foreground text-center py-6">
-              No campaigns found for this month.
+              No campaigns found matching filter.
             </div>
           ) : (
-            [...filteredHistory, ...filteredActivity].map((a) => {
+            displayedCampaigns.map((a) => {
               const c = CAMPAIGNS.find((x) => x.id === a.campaignId);
               if (!c) return null;
               const paidRow = a.step === "approved";
@@ -87,8 +194,14 @@ function Earnings() {
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-bold">{formatVND(c.compensation)}</div>
-                    <div className={`text-[10px] font-semibold ${paidRow ? "text-success" : "text-yellow-600 dark:text-yellow-500"}`}>
-                      {paidRow ? "Paid" : "Pending"}
+                    <div className={`text-[10px] font-semibold ${
+                      a.step === "approved" 
+                        ? "text-success" 
+                        : (a.step === "step5_review" || a.proofUploaded) 
+                          ? "text-amber-600" 
+                          : "text-muted-foreground"
+                    }`}>
+                      {a.step === "approved" ? "Paid" : (a.step === "step5_review" || a.proofUploaded) ? "Pending" : "In Progress"}
                     </div>
                   </div>
                 </div>
@@ -100,7 +213,7 @@ function Earnings() {
 
       {currentPayoutCount > 0 && (
         <section className="px-5 mt-8 pb-20">
-          <h2 className="text-sm font-semibold text-muted-foreground tracking-wide">Payout History</h2>
+          <h2 className="text-lg font-semibold text-foreground">Payout History</h2>
           <div className="mt-2 flex flex-col">
             <div className="py-4 border-b border-border/40 last:border-0">
               <div className="flex items-center justify-between">

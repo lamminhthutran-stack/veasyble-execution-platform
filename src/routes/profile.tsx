@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { useStore } from "@/lib/store";
-import { ChevronRight, LogOut, User, Globe, Shield } from "lucide-react";
+import { ChevronRight, LogOut, User, Globe, Shield, Clock, CheckCircle2, ListChecks } from "lucide-react";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -11,8 +11,14 @@ export const Route = createFileRoute("/profile")({
 });
 
 function Profile() {
-  const { profile, status, logout, updateProfile } = useStore();
+  const { profile, status, logout, updateProfile, activity, history } = useStore();
   const navigate = useNavigate();
+
+  const inProgress = activity.length;
+  const completed = history.length;
+  const total = inProgress + completed;
+
+
 
   return (
     <AppShell title="My Profile">
@@ -35,8 +41,17 @@ function Profile() {
         </div>
       </div>
 
-      <div className="px-5 mt-8 flex flex-col gap-1 pb-20">
-        <h3 className="text-xs uppercase font-semibold text-muted-foreground tracking-wide mb-2 mt-4">Settings</h3>
+      <section className="px-5 mt-4">
+        <div className="grid grid-cols-3 gap-3">
+          <Kpi icon={<Clock className="h-5 w-5" />} value={inProgress} label="In progress" />
+          <Kpi icon={<CheckCircle2 className="h-5 w-5" />} value={completed} label="Completed" />
+          <Kpi icon={<ListChecks className="h-5 w-5" />} value={total} label="Total" />
+        </div>
+      </section>
+
+
+      <div className="px-5 mt-6 flex flex-col gap-1 pb-20">
+        <h3 className="text-lg font-semibold text-foreground mb-3 mt-4">Settings</h3>
         
         <Link to="/profile-info" className="w-full flex items-center justify-between py-4">
           <div className="flex items-center gap-3">
@@ -80,5 +95,15 @@ function Profile() {
         </button>
       </div>
     </AppShell>
+  );
+}
+
+function Kpi({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 p-4 shadow-card flex flex-col items-start">
+      <div className="text-muted-foreground mb-4">{icon}</div>
+      <div className="text-3xl font-bold font-display text-foreground leading-none">{value}</div>
+      <div className="text-[11px] text-muted-foreground font-medium mt-1.5">{label}</div>
+    </div>
   );
 }
