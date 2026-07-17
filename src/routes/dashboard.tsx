@@ -163,14 +163,14 @@ function Dashboard() {
                       key={`${item.c.id}-${item.step}`}
                       to="/activity/$id"
                       params={{ id: item.c.id }}
-                      className="block rounded border border-border/70 bg-card p-3 shadow-card"
+                      className="block h-[102px] overflow-hidden rounded border border-border/70 bg-card p-3 shadow-card"
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{item.c.brand}</div>
+                      <div className="flex min-w-0 items-center justify-between gap-2">
+                        <div className="min-w-0 truncate text-xs font-bold uppercase tracking-wide text-muted-foreground">{item.c.brand}</div>
                         <StageBadge step={item.step} />
                       </div>
-                      <div className="mt-1 text-sm font-semibold">{item.c.title}</div>
-                      <div className="mt-0.5 text-xs text-muted-foreground">{item.c.location}</div>
+                      <div className="mt-2 truncate text-sm font-semibold leading-5">{item.c.title}</div>
+                      <div className="mt-1 truncate text-xs text-muted-foreground">{item.c.location}</div>
                     </Link>
                   ))}
                 </div>

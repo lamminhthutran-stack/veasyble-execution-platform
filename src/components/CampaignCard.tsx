@@ -20,7 +20,7 @@ const stepColor: Record<CampaignStep, string> = {
 
 export function StageBadge({ step }: { step: CampaignStep }) {
   return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${stepColor[step]}`}>
+    <span className={`inline-flex max-w-[150px] shrink-0 overflow-hidden text-ellipsis whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${stepColor[step]}`}>
       {STEP_LABELS[step]}
     </span>
   );
@@ -64,11 +64,11 @@ export function CampaignCard({
   return (
     <Link
       to={href}
-      className={`block rounded border border-border/70 bg-card shadow-card transition-transform active:scale-[0.99] ${
-        compact ? "w-[300px] shrink-0" : "w-full"
+      className={`block overflow-hidden rounded border border-border/70 bg-card shadow-card transition-transform active:scale-[0.99] ${
+        compact ? "h-[250px] w-[300px] shrink-0" : "min-h-[218px] w-full"
       }`}
     >
-      <div className="p-4">
+      <div className="flex h-full flex-col p-4">
         <div className="flex items-start gap-3">
           <Logo brand={c.brand} color={c.brandColor} />
           <div className="min-w-0 flex-1">
@@ -81,27 +81,27 @@ export function CampaignCard({
                 </span>
               )}
             </div>
-            <div className="mt-1 line-clamp-2 text-[15px] font-semibold leading-snug">{c.title}</div>
+            <div className="mt-1 h-10 overflow-hidden text-ellipsis text-[15px] font-semibold leading-5 line-clamp-2">{c.title}</div>
           </div>
         </div>
 
         <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 items-center gap-1.5">
             <Calendar className="h-3.5 w-3.5 shrink-0 opacity-70" />
-            <span className="truncate">{dateLabel}</span>
+            <span className="block min-w-0 truncate">{dateLabel}</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 items-center gap-1.5">
             <MapPin className="h-3.5 w-3.5 shrink-0 opacity-70" />
-            <span className="truncate">{c.location}</span>
+            <span className="block min-w-0 truncate">{c.location}</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 items-center gap-1.5">
             <Store className="h-3.5 w-3.5 shrink-0 opacity-70" />
-            <span className="truncate">{c.retailer}</span>
+            <span className="block min-w-0 truncate">{c.retailer}</span>
           </div>
         </div>
 
-        <div className="mt-3 border-t border-border/50 pt-3 flex items-center justify-between gap-3">
-          <div className="font-display text-base font-bold text-primary">{formatVND(c.compensation)}</div>
+        <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/50 pt-3">
+          <div className="min-w-0 truncate font-display text-base font-bold text-primary">{formatVND(c.compensation)}</div>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </div>
       </div>
