@@ -132,11 +132,26 @@ function ProfileAccount() {
   }
 
   return (
-    <AppShell title="Account Settings">
+    <AppShell>
+      <header className="sticky top-0 z-30 bg-background/85 backdrop-blur-xl border-b border-border/60">
+        <div className="flex items-center gap-3 h-14 px-5">
+          <button
+            onClick={() => {
+              if (typeof window !== "undefined" && window.history && window.history.length > 1) {
+                window.history.back();
+              } else {
+                navigate({ to: "/profile" });
+              }
+            }}
+            className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center active:scale-95 transition-transform cursor-pointer"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <h1 className="text-lg font-semibold tracking-tight">Account Settings</h1>
+        </div>
+      </header>
+
       <div className="px-5 pt-4 pb-20">
-        <button onClick={() => navigate({ to: "/profile" })} className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-6">
-          <ArrowLeft className="h-4 w-4" /> Back to Profile
-        </button>
 
         <div className="space-y-4">
           <ResponsiveConfirm
