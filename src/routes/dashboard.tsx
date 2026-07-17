@@ -163,7 +163,7 @@ function Dashboard() {
                       key={`${item.c.id}-${item.step}`}
                       to="/activity/$id"
                       params={{ id: item.c.id }}
-                      className="block h-[102px] overflow-hidden rounded border border-border/70 bg-card p-3 shadow-card"
+                      className="block h-[86px] overflow-hidden rounded border border-border/70 bg-card p-3 shadow-card"
                     >
                       <div className="flex min-w-0 items-center justify-between gap-2">
                         <div className="min-w-0 truncate text-xs font-bold uppercase tracking-wide text-muted-foreground">{item.c.brand}</div>

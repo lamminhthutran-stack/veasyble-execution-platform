@@ -65,7 +65,7 @@ export function CampaignCard({
     <Link
       to={href}
       className={`block overflow-hidden rounded border border-border/70 bg-card shadow-card transition-transform active:scale-[0.99] ${
-        compact ? "h-[250px] w-[300px] shrink-0" : "min-h-[218px] w-full"
+        compact ? "h-[218px] w-[300px] shrink-0" : "min-h-[204px] w-full"
       }`}
     >
       <div className="flex h-full flex-col p-4">
@@ -81,7 +81,7 @@ export function CampaignCard({
                 </span>
               )}
             </div>
-            <div className="mt-1 h-10 overflow-hidden text-ellipsis text-[15px] font-semibold leading-5 line-clamp-2">{c.title}</div>
+            <div className="mt-1 h-5 truncate text-[15px] font-semibold leading-5">{c.title}</div>
           </div>
         </div>
 
