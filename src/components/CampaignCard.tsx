@@ -8,7 +8,7 @@ import {
   type CampaignStep,
 } from "@/lib/mock-data";
 import { Link } from "@tanstack/react-router";
-import { Calendar, ChevronRight, MapPin, Store } from "lucide-react";
+import { Calendar, MapPin, Store } from "lucide-react";
 
 const stepColor: Record<CampaignStep, string> = {
   registered: "bg-sky-100 text-sky-700",
@@ -65,23 +65,26 @@ export function CampaignCard({
     <Link
       to={href}
       className={`block overflow-hidden rounded border border-border/70 bg-card shadow-card transition-transform active:scale-[0.99] ${
-        compact ? "h-[218px] w-[300px] shrink-0" : "min-h-[204px] w-full"
+        compact ? "h-[198px] w-[300px] shrink-0" : "min-h-[190px] w-full"
       }`}
     >
       <div className="flex h-full flex-col p-4">
         <div className="flex items-start gap-3">
           <Logo brand={c.brand} color={c.brandColor} />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <div className="truncate text-xs font-bold uppercase tracking-wide text-muted-foreground">{c.brand}</div>
-              {step && <StageBadge step={step} />}
+          <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="h-5 truncate text-[15px] font-semibold leading-5">
+                {c.title}
+              </div>
+              <div className="mt-1 truncate text-xs font-bold uppercase tracking-wide text-muted-foreground">{c.brand}</div>
+            </div>
+            <div className="flex shrink-0 justify-end">
               {mode === "explore" && (
                 <span className="shrink-0 rounded-full bg-orange-100 px-2 py-1 text-[11px] font-semibold text-orange-700">
                   {daysLeft(c.registrationDeadline)} days left
                 </span>
               )}
             </div>
-            <div className="mt-1 h-5 truncate text-[15px] font-semibold leading-5">{c.title}</div>
           </div>
         </div>
 
@@ -100,9 +103,11 @@ export function CampaignCard({
           </div>
         </div>
 
-        <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/50 pt-3">
+        <div className="mt-auto flex items-center justify-between gap-3 pt-2">
           <div className="min-w-0 truncate font-display text-base font-bold text-primary">{formatVND(c.compensation)}</div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <div className="flex shrink-0 items-center gap-2">
+            {step && <StageBadge step={step} />}
+          </div>
         </div>
       </div>
     </Link>

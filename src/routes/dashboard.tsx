@@ -11,7 +11,7 @@ import {
   TODAY_ISO,
   type CampaignStep,
 } from "@/lib/mock-data";
-import { Bell, ChevronRight, Filter } from "lucide-react";
+import { Bell, ChevronRight, Filter, MapPin } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -163,14 +163,21 @@ function Dashboard() {
                       key={`${item.c.id}-${item.step}`}
                       to="/activity/$id"
                       params={{ id: item.c.id }}
-                      className="block h-[86px] overflow-hidden rounded border border-border/70 bg-card p-3 shadow-card"
+                      className="block h-[112px] overflow-hidden rounded border border-border/70 bg-card p-4 shadow-card"
                     >
-                      <div className="flex min-w-0 items-center justify-between gap-2">
-                        <div className="min-w-0 truncate text-xs font-bold uppercase tracking-wide text-muted-foreground">{item.c.brand}</div>
-                        <StageBadge step={item.step} />
+                      <div className="flex min-w-0 items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="h-5 truncate text-sm font-semibold leading-5">{item.c.title}</div>
+                          <div className="mt-1 truncate text-xs font-bold uppercase tracking-wide text-muted-foreground">{item.c.brand}</div>
+                        </div>
+                        <div className="shrink-0">
+                          <StageBadge step={item.step} />
+                        </div>
                       </div>
-                      <div className="mt-2 truncate text-sm font-semibold leading-5">{item.c.title}</div>
-                      <div className="mt-1 truncate text-xs text-muted-foreground">{item.c.location}</div>
+                      <div className="mt-3 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                        <MapPin className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                        <span className="min-w-0 truncate">{item.c.location}</span>
+                      </div>
                     </Link>
                   ))}
                 </div>
