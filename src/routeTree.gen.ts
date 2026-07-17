@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProfileInfoRouteImport } from './routes/profile-info'
 import { Route as ProfileAccountRouteImport } from './routes/profile-account'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HistoryRouteImport } from './routes/history'
@@ -35,6 +36,11 @@ const ProfileAccountRoute = ProfileAccountRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarketplaceRoute = MarketplaceRouteImport.update({
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
   '/marketplace': typeof MarketplaceRoute
+  '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
   '/profile-account': typeof ProfileAccountRoute
   '/profile-info': typeof ProfileInfoRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
   '/marketplace': typeof MarketplaceRoute
+  '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
   '/profile-account': typeof ProfileAccountRoute
   '/profile-info': typeof ProfileInfoRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
   '/marketplace': typeof MarketplaceRoute
+  '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
   '/profile-account': typeof ProfileAccountRoute
   '/profile-info': typeof ProfileInfoRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/login'
     | '/marketplace'
+    | '/notifications'
     | '/profile'
     | '/profile-account'
     | '/profile-info'
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/login'
     | '/marketplace'
+    | '/notifications'
     | '/profile'
     | '/profile-account'
     | '/profile-info'
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/login'
     | '/marketplace'
+    | '/notifications'
     | '/profile'
     | '/profile-account'
     | '/profile-info'
@@ -178,6 +190,7 @@ export interface RootRouteChildren {
   HistoryRoute: typeof HistoryRoute
   LoginRoute: typeof LoginRoute
   MarketplaceRoute: typeof MarketplaceRoute
+  NotificationsRoute: typeof NotificationsRoute
   ProfileRoute: typeof ProfileRoute
   ProfileAccountRoute: typeof ProfileAccountRoute
   ProfileInfoRoute: typeof ProfileInfoRoute
@@ -207,6 +220,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/marketplace': {
@@ -282,6 +302,7 @@ const rootRouteChildren: RootRouteChildren = {
   HistoryRoute: HistoryRoute,
   LoginRoute: LoginRoute,
   MarketplaceRoute: MarketplaceRoute,
+  NotificationsRoute: NotificationsRoute,
   ProfileRoute: ProfileRoute,
   ProfileAccountRoute: ProfileAccountRoute,
   ProfileInfoRoute: ProfileInfoRoute,

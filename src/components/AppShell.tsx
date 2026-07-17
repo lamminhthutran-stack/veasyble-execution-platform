@@ -1,13 +1,13 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, Store, ListChecks, Wallet, User } from "lucide-react";
+import { LayoutGrid, Store, ListChecks, WalletCards, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 
 const nav = [
-  { to: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { to: "/dashboard", label: "Home", icon: LayoutGrid },
   { to: "/marketplace", label: "Market", icon: Store },
   { to: "/activity", label: "Activity", icon: ListChecks },
-  { to: "/earnings", label: "Earnings", icon: Wallet },
-  { to: "/profile", label: "Profile", icon: User },
+  { to: "/earnings", label: "Earnings", icon: WalletCards },
+  { to: "/profile", label: "Profile", icon: UserRound },
 ] as const;
 
 export function AppShell({ children, title, right }: { children: ReactNode; title?: string; right?: ReactNode }) {
@@ -27,7 +27,8 @@ export function AppShell({ children, title, right }: { children: ReactNode; titl
         <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-card/95 backdrop-blur-xl border-t border-border">
           <ul className="grid grid-cols-5 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
             {nav.map((n) => {
-              const active = pathname.startsWith(n.to);
+              const active =
+                pathname.startsWith(n.to) || (pathname.startsWith("/history") && n.to === "/activity");
               const Icon = n.icon;
               return (
                 <li key={n.to}>

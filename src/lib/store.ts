@@ -1,14 +1,19 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
-  type ActivityEntry,
-  type CampaignStep,
+  ACTIVE_STEPS,
   CAMPAIGNS,
   INITIAL_ACTIVITY,
   INITIAL_HISTORY,
+  INITIAL_NOTIFICATIONS,
+  TODAY_ISO,
+  type ActivityEntry,
+  type CampaignStep,
+  type Notification,
+  type Proof,
 } from "./mock-data";
 
-type AccountStatus = "pending" | "active" | "paused" | "deactivated" | "deleted";
+type AccountStatus = "approved" | "active" | "paused" | "deactivated" | "deleted";
 
 type Profile = {
   fullName: string;
@@ -17,6 +22,8 @@ type Profile = {
   personalEmail: string;
   idNumber: string;
   bank: string;
+  city: string;
+  wardDistrict: string;
   address: string;
   language: string;
   avatar?: string;
@@ -28,40 +35,45 @@ type State = {
   profile: Profile;
   activity: ActivityEntry[];
   history: ActivityEntry[];
-  login: () => void;
+  notifications: Notification[];
+  login: (email?: string, password?: string) => { ok: boolean; message?: string };
   logout: () => void;
-  register: (campaignId: string) => void;
-  advanceStep: (campaignId: string, to: CampaignStep) => void;
+  register: (campaignId: string) => { ok: boolean; message: string };
+  completePrinting: (campaignId: string) => void;
+  startSetup: (campaignId: string) => void;
+  saveProofDraft: (campaignId: string, proof: Proof) => void;
   submitProof: (campaignId: string) => void;
   approve: (campaignId: string) => void;
   reject: (campaignId: string, reason: string) => void;
   pause: () => { ok: boolean; reason?: string };
   resume: () => void;
+  deleteAccount: () => { ok: boolean; reason?: string };
+  markNotificationRead: (id: string) => void;
   updateProfile: (p: Partial<Profile>) => void;
 };
 
-const stepOrder: CampaignStep[] = [
-  "step1_registered",
-  "step2_printing",
-  "step3_execution",
-  "step4_completed",
-  "step5_review",
-];
+function nowIso() {
+  return `${TODAY_ISO}T10:00:00`;
+}
 
 function startingStepFor(campaignId: string): CampaignStep {
   const c = CAMPAIGNS.find((x) => x.id === campaignId);
-  if (!c) return "step1_registered";
-  const today = new Date("2026-07-08");
-  if (new Date(c.executionStart) <= today) return "step3_execution";
-  if (new Date(c.productionStart) <= today) return "step2_printing";
-  return "step1_registered";
+  if (!c) return "registered";
+  const today = new Date(TODAY_ISO);
+  if (new Date(c.executionStart) <= today) return "execution";
+  if (new Date(c.productionStart) <= today) return "printing";
+  return "registered";
+}
+
+function hasOpenWork(entries: ActivityEntry[]) {
+  return entries.some((entry) => ACTIVE_STEPS.includes(entry.step));
 }
 
 export const useStore = create<State>()(
   persist(
     (set, get) => ({
       isAuthed: false,
-      status: "active",
+      status: "approved",
       profile: {
         fullName: "Linh Nguyen",
         phone: "+84 90 123 4567",
@@ -69,41 +81,88 @@ export const useStore = create<State>()(
         personalEmail: "linh.nguyen@gmail.com",
         idNumber: "079xxxxxxxx",
         bank: "VCB • •••• 4821",
-        address: "42 Nguyen Hue, District 1, HCMC",
+        city: "Ho Chi Minh City",
+        wardDistrict: "Ben Nghe, District 1",
+        address: "42 Nguyen Hue, Ben Nghe, District 1, HCMC",
         language: "English",
         avatar: "/profile_avatar_demo.png",
       },
       activity: INITIAL_ACTIVITY,
       history: INITIAL_HISTORY,
-      login: () => set({ isAuthed: true, status: "active" }),
+      notifications: INITIAL_NOTIFICATIONS,
+      login: (email, password) => {
+        if (email && password && (email.trim() === "" || password.trim() === "")) {
+          return { ok: false, message: "Email or password is incorrect." };
+        }
+        const status = get().status === "approved" ? "active" : get().status;
+        set({ isAuthed: true, status });
+        return { ok: true };
+      },
       logout: () => set({ isAuthed: false }),
       register: (campaignId) => {
-        const { activity, history } = get();
-        if (activity.some((a) => a.campaignId === campaignId)) return;
-        if (history.some((a) => a.campaignId === campaignId)) return;
+        const { activity, history, status } = get();
+        if (status === "paused") return { ok: false, message: "Registration is disabled while your account is paused." };
+        if (status === "deactivated") return { ok: false, message: "Registration is unavailable for deactivated accounts." };
+        if ([...activity, ...history].some((a) => a.campaignId === campaignId)) {
+          return { ok: false, message: "You are already registered for this campaign." };
+        }
+        const campaign = CAMPAIGNS.find((c) => c.id === campaignId);
         set({
           activity: [
             ...activity,
             {
               campaignId,
               step: startingStepFor(campaignId),
-              registeredAt: new Date().toISOString(),
+              registeredAt: nowIso(),
             },
           ],
+          notifications: [
+            {
+              id: `n-${Date.now()}`,
+              type: "info",
+              title: "Registration confirmed",
+              sender: "Veasyble Executor Platform",
+              sentAt: nowIso(),
+              unread: true,
+              campaignId,
+              message: `You are registered for ${campaign?.title ?? "this campaign"}. It now appears in Activity.`,
+            },
+            ...get().notifications,
+          ],
         });
+        return { ok: true, message: "Registration succeeded. Campaign added to Activity." };
       },
-      advanceStep: (campaignId, to) =>
+      completePrinting: (campaignId) =>
         set({
-          activity: get().activity.map((a) =>
-            a.campaignId === campaignId ? { ...a, step: to, rejectionReason: undefined } : a,
+          activity: get().activity.map((entry) =>
+            entry.campaignId === campaignId
+              ? { ...entry, printingCompletedAt: nowIso(), step: entry.step === "printing" ? "execution" : entry.step }
+              : entry,
           ),
+        }),
+      startSetup: (campaignId) =>
+        set({
+          activity: get().activity.map((entry) =>
+            entry.campaignId === campaignId ? { ...entry, setupStartedAt: nowIso() } : entry,
+          ),
+        }),
+      saveProofDraft: (campaignId, proof) =>
+        set({
+          activity: get().activity.map((entry) => {
+            if (entry.campaignId !== campaignId) return entry;
+            const proofs = entry.proofs ?? [];
+            return {
+              ...entry,
+              proofs: [...proofs.filter((p) => p.mediaSpaceId !== proof.mediaSpaceId), proof],
+            };
+          }),
         }),
       submitProof: (campaignId) =>
         set({
-          activity: get().activity.map((a) =>
-            a.campaignId === campaignId
-              ? { ...a, step: "step5_review", proofUploaded: true, rejectionReason: undefined }
-              : a,
+          activity: get().activity.map((entry) =>
+            entry.campaignId === campaignId
+              ? { ...entry, step: "review", proofSubmittedAt: nowIso(), rejectionReason: undefined }
+              : entry,
           ),
         }),
       approve: (campaignId) => {
@@ -111,27 +170,51 @@ export const useStore = create<State>()(
         if (!entry) return;
         set({
           activity: get().activity.filter((a) => a.campaignId !== campaignId),
-          history: [...get().history, { ...entry, step: "approved" }],
+          history: [{ ...entry, step: "approved", approvedAt: nowIso() }, ...get().history],
         });
       },
       reject: (campaignId, reason) =>
         set({
-          activity: get().activity.map((a) =>
-            a.campaignId === campaignId ? { ...a, step: "step4_completed", rejectionReason: reason } : a,
+          activity: get().activity.map((entry) =>
+            entry.campaignId === campaignId ? { ...entry, step: "execution", rejectionReason: reason } : entry,
           ),
+          notifications: [
+            {
+              id: `n-${Date.now()}`,
+              type: "rejected",
+              title: "Proof rejected",
+              sender: "Veasyble Campaign Management",
+              sentAt: nowIso(),
+              unread: true,
+              campaignId,
+              message: reason,
+            },
+            ...get().notifications,
+          ],
         }),
       pause: () => {
-        if (get().activity.length > 0) {
+        if (hasOpenWork(get().activity)) {
           return { ok: false, reason: "You have in-progress campaigns. Complete them first." };
         }
         set({ status: "paused" });
         return { ok: true };
       },
       resume: () => set({ status: "active" }),
+      deleteAccount: () => {
+        if (hasOpenWork(get().activity)) return { ok: false, reason: "Resolve in-progress campaigns before deleting." };
+        set({ status: "deleted", isAuthed: false });
+        return { ok: true };
+      },
+      markNotificationRead: (id) =>
+        set({
+          notifications: get().notifications.map((notification) =>
+            notification.id === id ? { ...notification, unread: false } : notification,
+          ),
+        }),
       updateProfile: (p) => set({ profile: { ...get().profile, ...p } }),
     }),
-    { name: "veasyble-executor" },
+    { name: "veasyble-executor-v2" },
   ),
 );
 
-export { stepOrder };
+export { ACTIVE_STEPS as stepOrder };

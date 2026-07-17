@@ -1,92 +1,216 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
+import { CampaignCard, StageBadge } from "@/components/CampaignCard";
 import { useStore } from "@/lib/store";
-import { CAMPAIGNS, formatVND, STEP_LABELS } from "@/lib/mock-data";
-import { TrendingUp, Clock, CheckCircle2, ListChecks, Bell } from "lucide-react";
+import {
+  CAMPAIGNS,
+  formatShortDate,
+  formatVND,
+  stageDeadline,
+  STEP_LABELS,
+  TODAY_ISO,
+  type CampaignStep,
+} from "@/lib/mock-data";
+import { Bell, ChevronRight, Filter } from "lucide-react";
+import { useMemo, useState } from "react";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — Veasyble Executor" },
+      { title: "Home — Veasyble Executor" },
       { name: "description", content: "Your campaign snapshot and upcoming reminders." },
     ],
   }),
   component: Dashboard,
 });
 
+type TimelineFilter = "all" | "week" | "twoWeeks" | "month";
+
+const filterLabels: Record<TimelineFilter, string> = {
+  all: "All",
+  week: "Within 1 Week",
+  twoWeeks: "Within 2 Weeks",
+  month: "Within 1 Month",
+};
+
 function Dashboard() {
-  const { activity, history, profile } = useStore();
-  const inProgress = activity.length;
-  const completed = history.length;
-  const total = inProgress + completed;
+  const { activity, history, profile, notifications } = useStore();
+  const [filter, setFilter] = useState<TimelineFilter>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const unread = notifications.filter((n) => n.unread).length;
+  const completedThisMonth = history
+    .filter((a) => a.approvedAt?.startsWith("2026-07"))
+    .reduce((sum, a) => sum + (CAMPAIGNS.find((c) => c.id === a.campaignId)?.compensation ?? 0), 0);
   const projected =
+    completedThisMonth +
     activity.reduce((sum, a) => sum + (CAMPAIGNS.find((c) => c.id === a.campaignId)?.compensation ?? 0), 0);
 
-  const reminders = activity
-    .map((a) => ({ a, c: CAMPAIGNS.find((c) => c.id === a.campaignId)! }))
-    .filter((x) => x.c)
-    .sort((a, b) => a.c.deadline.localeCompare(b.c.deadline));
+  const actionItems = activity.filter((entry) => {
+    if (entry.step === "printing") return !entry.printingCompletedAt;
+    if (entry.step === "execution") return !entry.proofSubmittedAt;
+    return false;
+  });
+
+  const timeline = useMemo(() => {
+    const today = new Date(TODAY_ISO);
+    const maxDays = filter === "week" ? 7 : filter === "twoWeeks" ? 14 : filter === "month" ? 30 : Number.POSITIVE_INFINITY;
+    return activity
+      .flatMap((entry) => {
+        const c = CAMPAIGNS.find((campaign) => campaign.id === entry.campaignId);
+        if (!c) return [];
+        const steps: CampaignStep[] = ["registered", "printing", "execution", "review"];
+        return steps.map((step) => ({ entry, c, step, deadline: stageDeadline(c, step) }));
+      })
+      .filter((item) => {
+        const diff = (new Date(item.deadline).getTime() - today.getTime()) / 86400000;
+        return diff >= 0 && diff <= maxDays;
+      })
+      .sort((a, b) => a.deadline.localeCompare(b.deadline));
+  }, [activity, filter]);
+
+  const grouped = timeline.reduce<Record<string, typeof timeline>>((acc, item) => {
+    acc[item.deadline] = [...(acc[item.deadline] ?? []), item];
+    return acc;
+  }, {});
 
   return (
     <AppShell>
-      <div className="bg-gradient-hero text-foreground px-5 pt-12 pb-8 rounded-b-[2rem]">
+      <div className="px-5 pt-10">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-muted-foreground text-sm">Welcome back</div>
-            <div className="text-2xl font-bold mt-0.5">{profile.fullName.split(" ")[0]}</div>
+            <div className="text-sm text-muted-foreground">Welcome back,</div>
+            <h1 className="mt-0.5 text-2xl font-bold">{profile.fullName.split(" ")[0]}</h1>
           </div>
-          <button className="h-10 w-10 rounded-full bg-black/5 flex items-center justify-center backdrop-blur">
-            <Bell className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="mt-6 bg-white/50 backdrop-blur rounded-2xl p-4 border border-border/60 shadow-sm">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Projected monthly earnings</div>
-          <div className="mt-1 text-3xl font-bold font-display text-primary">{formatVND(projected)}</div>
-          <Link to="/earnings" className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary">
-            <TrendingUp className="h-4 w-4" /> View earnings
+          <Link to="/notifications" className="relative flex h-10 w-10 items-center justify-center text-foreground">
+            <Bell className="h-6 w-6 stroke-[2.2]" />
+            {unread > 0 && (
+              <span className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                {unread}
+              </span>
+            )}
           </Link>
         </div>
+
+        <KpiPanel projected={formatVND(projected)} total={String(activity.length + history.length)} />
       </div>
 
-      <section className="px-5 mt-6">
-        <div className="grid grid-cols-3 gap-3">
-          <Kpi icon={<Clock className="h-4 w-4" />} value={inProgress} label="In progress" />
-          <Kpi icon={<CheckCircle2 className="h-4 w-4" />} value={completed} label="Completed" />
-          <Kpi icon={<ListChecks className="h-4 w-4" />} value={total} label="Total" />
+      <section className="mt-7 px-5">
+        <h2 className="text-lg font-semibold">In-progress Activities</h2>
+        <div className="-mx-5 mt-3 flex gap-3 overflow-x-auto px-5 pb-1">
+          {actionItems.length === 0 ? (
+            <div className="w-full rounded border border-border/70 bg-card p-4 text-sm text-muted-foreground">
+              No campaign actions need your attention right now.
+            </div>
+          ) : (
+            actionItems.map((entry) => (
+              <CampaignCard
+                key={entry.campaignId}
+                campaignId={entry.campaignId}
+                step={entry.step}
+                href={`/activity/${entry.campaignId}`}
+                mode="dashboard"
+                compact
+              />
+            ))
+          )}
         </div>
       </section>
 
-      <section className="px-5 mt-8">
+      <section className="mt-7 px-5 pb-20">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Timeline</h2>
-          <Link to="/activity" className="text-sm text-primary font-medium">View all</Link>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold">Timeline</h2>
+            <div className="relative">
+              <button onClick={() => setFilterOpen((open) => !open)} className="flex h-8 w-8 items-center justify-center rounded bg-secondary">
+                <Filter className="h-4 w-4" />
+              </button>
+              {filterOpen && (
+                <div className="absolute left-0 top-9 z-20 w-44 rounded border border-border bg-card p-1 shadow-elevated">
+                  {(Object.keys(filterLabels) as TimelineFilter[]).map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        setFilter(key);
+                        setFilterOpen(false);
+                      }}
+                      className={`block w-full rounded px-3 py-2 text-left text-sm ${filter === key ? "bg-accent font-semibold text-primary" : ""}`}
+                    >
+                      {filterLabels[key]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <Link to="/activity" className="text-sm font-semibold text-primary">View all</Link>
         </div>
-        <ol className="mt-3 relative border-l-2 border-border/70 pl-5 space-y-4">
-          {reminders.length === 0 && (
-            <li className="text-sm text-muted-foreground">No upcoming campaigns. Browse the marketplace to register.</li>
-          )}
-          {reminders.map(({ a, c }) => (
-            <li key={c.id} className="relative">
-              <span className="absolute -left-[26px] top-1.5 h-3 w-3 rounded-full bg-primary ring-4 ring-primary/20" />
-              <div className="bg-card rounded-xl border border-border/60 p-3 shadow-card">
-                <div className="text-xs text-muted-foreground">Deadline {c.deadline.slice(5)} • {STEP_LABELS[a.step]}</div>
-                <div className="mt-0.5 font-medium text-sm">{c.title}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{c.retailer} • {c.location}</div>
-              </div>
-            </li>
-          ))}
-        </ol>
+        {timeline.length === 0 ? (
+          <div className="mt-3 rounded border border-border/70 bg-card p-4 text-sm text-muted-foreground">
+            No upcoming stage deadlines within this timeframe.
+          </div>
+        ) : (
+          <ol className="mt-3 space-y-5">
+            {Object.entries(grouped).map(([date, items]) => (
+              <li key={date} className="relative grid grid-cols-[30%_70%]">
+                <div className="absolute bottom-0 left-[30%] top-0 w-px -translate-x-1/2 bg-border" />
+                <span className="absolute left-[30%] top-1.5 h-3.5 w-3.5 -translate-x-1/2 rounded-full bg-primary ring-4 ring-orange-100" />
+                <div className="pr-4">
+                  <div className="whitespace-nowrap text-[13px] font-semibold leading-5">{dateLabel(date)}</div>
+                </div>
+                <div className="space-y-2 pl-5">
+                  {items.map((item) => (
+                    <Link
+                      key={`${item.c.id}-${item.step}`}
+                      to="/activity/$id"
+                      params={{ id: item.c.id }}
+                      className="block rounded border border-border/70 bg-card p-3 shadow-card"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{item.c.brand}</div>
+                        <StageBadge step={item.step} />
+                      </div>
+                      <div className="mt-1 text-sm font-semibold">{item.c.title}</div>
+                      <div className="mt-0.5 text-xs text-muted-foreground">{item.c.location}</div>
+                    </Link>
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
       </section>
     </AppShell>
   );
 }
 
-function Kpi({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
+function KpiPanel({ projected, total }: { projected: string; total: string }) {
   return (
-    <div className="bg-card rounded-2xl border border-border/60 p-3 shadow-card">
-      <div className="text-muted-foreground">{icon}</div>
-      <div className="mt-1 text-2xl font-bold font-display">{value}</div>
-      <div className="text-[11px] text-muted-foreground font-medium">{label}</div>
+    <div className="mt-6 grid grid-cols-[60%_40%] overflow-hidden rounded border border-border/80 bg-card shadow-card">
+      <Link to="/earnings" className="group min-w-0 p-4 pr-2">
+        <div className="text-xs font-bold tracking-wide text-foreground/80">Projected Earnings This Month</div>
+        <div className="mt-3 flex min-w-0 items-center gap-1.5">
+          <div className="min-w-0 truncate font-display text-xl font-bold leading-none text-primary">{projected}</div>
+          <div className="shrink-0 text-xs font-bold text-success">↗ 17%</div>
+          <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-foreground/80 transition-transform group-active:translate-x-0.5" />
+        </div>
+      </Link>
+      <Link to="/activity" className="group min-w-0 border-l border-border/80 p-4 pl-5">
+        <div className="text-xs font-bold tracking-wide text-foreground/80">Total Campaigns</div>
+        <div className="mt-3 flex items-center gap-2">
+          <div className="font-display text-xl font-bold leading-none text-primary">{total}</div>
+          <ChevronRight className="ml-auto h-5 w-5 shrink-0 text-foreground/80 transition-transform group-active:translate-x-0.5" />
+        </div>
+      </Link>
     </div>
   );
+}
+
+function dateLabel(date: string) {
+  const today = new Date(TODAY_ISO);
+  const target = new Date(date);
+  const diff = Math.round((target.getTime() - today.getTime()) / 86400000);
+  const shortDate = formatShortDate(date);
+  if (diff === 0) return `Today - ${shortDate}`;
+  if (diff === 1) return `Tomorrow - ${shortDate}`;
+  return shortDate;
 }

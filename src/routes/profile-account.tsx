@@ -100,7 +100,7 @@ function ResponsiveConfirm({
 }
 
 function ProfileAccount() {
-  const { status, pause, resume, logout, activity } = useStore();
+  const { status, pause, resume, deleteAccount, activity } = useStore();
   const navigate = useNavigate();
   const [isPauseOpen, setIsPauseOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -122,13 +122,13 @@ function ProfileAccount() {
 
 
   function handleDeleteConfirm() {
-    if (activity.length > 0) {
-      toast("Resolve in-progress campaigns before deleting.");
-      return;
+    const result = deleteAccount();
+    if (!result.ok) {
+      toast(result.reason || "Unable to delete account.");
+    } else {
+      toast("Account deleted. Confirmation email sent.");
+      navigate({ to: "/login" });
     }
-    logout();
-    toast("Account deleted. Confirmation email sent.");
-    navigate({ to: "/login" });
   }
 
   return (
@@ -150,7 +150,15 @@ function ProfileAccount() {
             }
             onConfirm={handlePauseConfirm}
             trigger={
-              <button className="w-full flex items-center justify-between p-4 bg-card rounded-2xl border border-border/60 shadow-sm">
+              <button
+                onClick={(event) => {
+                  if (status !== "paused" && activity.length > 0) {
+                    event.preventDefault();
+                    toast("You have in-progress campaigns. Complete them first.");
+                  }
+                }}
+                className="w-full flex items-center justify-between p-4 bg-card rounded border border-border/60 shadow-sm"
+              >
                 <div className="flex items-center gap-3">
                   {status === "paused" ? (
                     <Play className="h-5 w-5" />
@@ -175,7 +183,15 @@ function ProfileAccount() {
             confirmText="Delete Account"
             destructive={true}
             trigger={
-              <button className="w-full flex items-center justify-between p-4 bg-destructive/5 rounded-2xl border border-destructive/20 shadow-sm text-destructive">
+              <button
+                onClick={(event) => {
+                  if (activity.length > 0) {
+                    event.preventDefault();
+                    toast("Resolve in-progress campaigns before deleting.");
+                  }
+                }}
+                className="w-full flex items-center justify-between p-4 bg-destructive/5 rounded border border-destructive/20 shadow-sm text-destructive"
+              >
                 <div className="flex items-center gap-3">
                   <Trash2 className="h-5 w-5" />
                   <div className="text-left">
